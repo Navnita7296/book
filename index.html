@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BookNook - Your Online Bookstore</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .book-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+        }
+        .cart-item-enter {
+            opacity: 0;
+            transform: translateX(-20px);
+        }
+        .cart-item-enter-active {
+            opacity: 1;
+            transform: translateX(0);
+            transition: all 300ms ease-in;
+        }
+        .cart-item-exit {
+            opacity: 1;
+        }
+        .cart-item-exit-active {
+            opacity: 0;
+            transform: translateX(20px);
+            transition: all 300ms ease-in;
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <!-- Navigation -->
+    <nav class="bg-indigo-900 text-white shadow-lg">
+        <div class="container mx-auto px-4 py-3 flex justify-between items-center">
+            <div class="flex items-center space-x-2">
+                <i class="fas fa-book-open text-2xl"></i>
+                <span class="text-xl font-bold">BookNook</span>
+            </div>
+            <div class="hidden md:flex space-x-6">
+                <a href="#" class="hover:text-indigo-200 transition" onclick="showHome()">Home</a>
+                <a href="#" class="hover:text-indigo-200 transition" onclick="showBooks()">Books</a>
+                <a href="#" class="hover:text-indigo-200 transition" onclick="showCategories()">Categories</a>
+                <a href="#" class="hover:text-indigo-200 transition" onclick="showAbout()">About</a>
+            </div>
+            <div class="flex items-center space-x-4">
+                <div class="relative">
+                    <input type="text" placeholder="Search books..." 
+                           class="px-4 py-2 rounded-full text-gray-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 w-64"
+                           id="searchInput" onkeyup="searchBooks()">
+                    <i class="fas fa-search absolute right-3 top-3 text-gray-500"></i>
+                </div>
+                <button class="relative" onclick="toggleCart()">
+                    <i class="fas fa-shopping-cart text-xl"></i>
+                    <span id="cartCount" class="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs">0</span>
+                </button>
+                <button id="authButton" class="px-4 py-2 bg-indigo-700 rounded hover:bg-indigo-600 transition" onclick="toggleAuthModal()">
+                    Login
+                </button>
+                <button id="adminButton" class="px-4 py-2 bg-red-600 rounded hover:bg-red-500 transition hidden" onclick="showAdminPanel()">
+                    Admin
+                </button>
+            </div>
+            <button class="md:hidden text-xl" onclick="toggleMobileMenu()">
+                <i class="fas fa-bars"></i>
+            </button>
+        </div>
+        <!-- Mobile Menu -->
+        <div id="mobileMenu" class="md:hidden bg-indigo-800 hidden">
+            <div class="container mx-auto px-4 py-2 flex flex-col space-y-2">
+                <a href="#" class="py-2 hover:text-indigo-200 transition" onclick="showHome()">Home</a>
+                <a href="#" class="py-2 hover:text-indigo-200 transition" onclick="showBooks()">Books</a>
+                <a href="#" class="py-2 hover:text-indigo-200 transition" onclick="showCategories()">Categories</a>
+                <a href="#" class="py-2 hover:text-indigo-200 transition" onclick="showAbout()">About</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Shopping Cart Sidebar -->
+    <div id="cartSidebar" class="fixed top-0 right-0 w-80 h-full bg-white shadow-lg transform translate-x-full transition-transform duration-300 z-50">
+        <div class="p-4 border-b flex justify-between items-center">
+            <h3 class="text-lg font-semibold">Your Cart</h3>
+            <button onclick="toggleCart()" class="text-gray-500 hover:text-gray-700">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div id="cartItems" class="p-4 overflow-y-auto h-3/4">
+            <!-- Cart items will be added here -->
+            <p class="text-gray-500 text-center py-8">Your cart is empty</p>
+        </div>
+        <div class="absolute bottom-0 left-0 right-0 p-4 border-t bg-white">
+            <div class="flex justify-between mb-2">
+                <span class="font-semibold">Total:</span>
+                <span id="cartTotal" class="font-bold">$0.00</span>
+            </div>
+            <button class="w-full bg-indigo-600 text-white py-2 rounded hover:bg-indigo-700 transition" onclick="checkout()">
+                Checkout
+            </button>
+        </div>
+    </div>
+    <div id="cartOverlay" class="fixed inset-0 bg-black bg-opacity-50 z-40 hidden" onclick="toggleCart()"></div>
+
+    <!-- Auth Modal -->
+    <div id="authModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-lg shadow-xl w-96 p-6">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-xl font-semibold" id="authModalTitle">Login</h3>
+                <button onclick="toggleAuthModal()" class="text-gray-500 hover:text-gray-700">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div id="loginForm">
+                <div class="mb-4">
+                    <label class="block text-gray-700 mb-2">Email</label>
+                    <input type="email" id="loginEmail" class="w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                </div>
+                <div class="mb-6">
+                    <label class="block text-gray-700 mb-2">Password</label>
+                    <input type="password" id="loginPassword" class="w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                </div>
+                <button onclick="login()" class="w-full bg-indigo-600 text-white py-2 rounded hover:bg-indigo-700 transition mb-2">
+                    Login
+                </button>
+                <p class="text-center text-gray-600">
+                    Don't have an account? 
+                    <button onclick="switchToRegister()" class="text-indigo-600 hover:underline">Register</button>
+                </p>
+            </div>
+            <div id="registerForm" class="hidden">
+                <div class="mb-4">
+                    <label class="block text-gray-700 mb-2">Name</label>
+                    <input type="text" id="registerName" class="w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                </div>
+                <div class="mb-4">
+                    <label class="block text-gray-700 mb-2">Email</label>
+                    <input type="email" id="registerEmail" class="w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                </div>
+                <div class="mb-6">
+                    <label class="block text-gray-700 mb-2">Password</label>
+                    <input type="password" id="registerPassword" class="w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                </div>
+                <button onclick="register()" class="w-full bg-indigo-600 text-white py-2 rounded hover:bg-indigo-700 transition mb-2">
+                    Register
+                </button>
+                <p class="text-center text-gray-600">
+                    Already have an account? 
+                    <button onclick="switchToLogin()" class="text-indigo-600 hover:underline">Login</button>
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <main class="container mx-auto px-4 py-8">
+        <!-- Home Page -->
+        <div id="homePage">
+            <section class="mb-16">
+                <div class="bg-indigo-100 rounded-xl p-8 md:p-12 flex flex-col md:flex-row items-center">
+                    <div class="md:w-1/2 mb-8 md:mb-0">
+                        <h1 class="text-4xl md:text-5xl font-bold text-indigo-900 mb-4">Discover Your Next Favorite Book</h1>
+                        <p class="text-lg text-gray-700 mb-6">Explore our vast collection of books across all genres. From bestsellers to hidden gems, we have something for every reader.</p>
+                        <button class="px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition" onclick="showBooks()">
+                            Browse Books
+                        </button>
+                    </div>
+                    <div class="md:w-1/2 flex justify-center">
+                        <img src="https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1074&q=80" 
+                             alt="Bookshelf" class="rounded-lg shadow-lg max-h-96">
+                    </div>
+                </div>
+            </section>
+
+            <section class="mb-16">
+                <h2 class="text-3xl font-bold text-center mb-8">Featured Categories</h2>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
+                    <div class="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition cursor-pointer" onclick="filterByCategory('Fiction')">
+                        <div class="bg-indigo-100 w-16 h-16 rounded-full flex items-center justify-center mb-4 mx-auto">
+                            <i class="fas fa-book-open text-indigo-600 text-2xl"></i>
+                        </div>
+                        <h3 class="text-xl font-semibold text-center mb-2">Fiction</h3>
+                        <p class="text-gray-600 text-center">Explore imaginative stories</p>
+                    </div>
+                    <div class="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition cursor-pointer" onclick="filterByCategory('Science')">
+                        <div class="bg-blue-100 w-16 h-16 rounded-full flex items-center justify-center mb-4 mx-auto">
+                            <i class="fas fa-atom text-blue-600 text-2xl"></i>
+                        </div>
+                        <h3 class="text-xl font-semibold text-center mb-2">Science</h3>
+                        <p class="text-gray-600 text-center">Discover scientific wonders</p>
+                    </div>
+                    <div class="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition cursor-pointer" onclick="filterByCategory('History')">
+                        <div class="bg-amber-100 w-16 h-16 rounded-full flex items-center justify-center mb-4 mx-auto">
+                            <i class="fas fa-landmark text-amber-600 text-2xl"></i>
+                        </div>
+                        <h3 class="text-xl font-semibold text-center mb-2">History</h3>
+                        <p class="text-gray-600 text-center">Journey through time</p>
+                    </div>
+                    <div class="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition cursor-pointer" onclick="filterByCategory('Biography')">
+                        <div class="bg-green-100 w-16 h-16 rounded-full flex items-center justify-center mb-4 mx-auto">
+                            <i class="fas fa-user text-green-600 text-2xl"></i>
+                        </div>
+                        <h3 class="text-xl font-semibold text-center mb-2">Biography</h3>
+                        <p class="text-gray-600 text-center">Inspiring life stories</p>
+                    </div>
+                </div>
+            </section>
+
+            <section>
+                <h2 class="text-3xl font-bold text-center mb-8">New Arrivals</h2>
+                <div id="featuredBooks" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                    <!-- Featured books will be loaded here -->
+                </div>
+            </section>
+        </div>
+
+        <!-- Books Page -->
+        <div id="booksPage" class="hidden">
+            <div class="flex justify-between items-center mb-8">
+                <h2 class="text-3xl font-bold">All Books</h2>
+                <div class="flex space-x-4">
+                    <select id="categoryFilter" class="px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-indigo-500" onchange="filterBooks()">
+                        <option value="">All Categories</option>
+                        <!-- Categories will be added here -->
+                    </select>
+                    <select id="sortFilter" class="px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-indigo-500" onchange="filterBooks()">
+                        <option value="title-asc">Title (A-Z)</option>
+                        <option value="title-desc">Title (Z-A)</option>
+                        <option value="price-asc">Price (Low to High)</option>
+                        <option value="price-desc">Price (High to Low)</option>
+                        <option value="date-desc">Newest First</option>
+                    </select>
+                </div>
+            </div>
+            <div id="allBooks" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                <!-- All books will be loaded here -->
+            </div>
+            <div class="mt-8 flex justify-center">
+                <button id="loadMore" class="px-6 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 transition" onclick="loadMoreBooks()">
+                    Load More
+                </button>
+            </div>
+        </div>
+
+        <!-- Categories Page -->
+        <div id="categoriesPage" class="hidden">
+            <h2 class="text-3xl font-bold mb-8">Categories</h2>
+            <div id="categoriesList" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- Categories will be loaded here -->
+            </div>
+        </div>
+
+        <!-- About Page -->
+        <div id="aboutPage" class="hidden">
+            <div class="max-w-3xl mx-auto">
+                <h2 class="text-3xl font-bold mb-6">About BookNook</h2>
+                <div class="bg-white p-8 rounded-lg shadow-md mb-8">
+                    <p class="text-gray-700 mb-4">
+                        Welcome to BookNook, your premier destination for discovering and purchasing books online. 
+                        Founded in 2023, we're passionate about connecting readers with their next favorite book.
+                    </p>
+                    <p class="text-gray-700 mb-4">
+                        Our carefully curated collection includes thousands of titles across all genres, from 
+                        bestsellers to independent publications. We believe in the power of books to educate, 
+                        entertain, and inspire.
+                    </p>
+                    <p class="text-gray-700 mb-6">
+                        Our mission is to make reading accessible to everyone while supporting authors and 
+                        publishers in sharing their work with the world.
+                    </p>
+                    <div class="border-t pt-6">
+                        <h3 class="text-xl font-semibold mb-4">Our Team</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            <div class="text-center">
+                                <div class="w-24 h-24 bg-indigo-100 rounded-full mx-auto mb-3 flex items-center justify-center">
+                                    <i class="fas fa-user text-indigo-600 text-3xl"></i>
+                                </div>
+                                <h4 class="font-semibold">Sarah Johnson</h4>
+                                <p class="text-gray-600 text-sm">Founder & CEO</p>
+                            </div>
+                            <div class="text-center">
+                                <div class="w-24 h-24 bg-blue-100 rounded-full mx-auto mb-3 flex items-center justify-center">
+                                    <i class="fas fa-user text-blue-600 text-3xl"></i>
+                                </div>
+                                <h4 class="font-semibold">Michael Chen</h4>
+                                <p class="text-gray-600 text-sm">Head of Operations</p>
